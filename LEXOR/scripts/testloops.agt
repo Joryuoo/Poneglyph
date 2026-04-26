@@ -1,0 +1,32 @@
+SCRIPT AREA
+START SCRIPT
+
+DECLARE INT counter, limit
+DECLARE BOOL is_active = "TRUE"
+
+%% --- Testing REPEAT WHEN ---
+PRINT: "--- Starting REPEAT WHEN Loop ---" & $
+counter = 1
+
+REPEAT WHEN (is_active)
+START REPEAT
+    PRINT: "Repeat Iteration: " & counter & $
+    counter = counter + 1
+    
+    IF (counter > 3)
+    START IF
+        is_active = "FALSE"
+    END IF
+END REPEAT
+
+%% --- Testing FOR Loop ---
+PRINT: $ & "--- Starting FOR Loop ---" & $
+
+FOR (limit = 5, limit > 0, limit = limit - 1)
+START FOR
+    PRINT: "T-Minus: " & limit & $
+END FOR
+
+PRINT: "Monggos"
+
+END SCRIPT

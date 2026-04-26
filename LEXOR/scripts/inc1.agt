@@ -1,0 +1,21 @@
+SCRIPT AREA
+START SCRIPT
+
+%% --- INCREMENT 1 TEST: Basics & Printing ---
+%% Testing variable declarations
+DECLARE INT age, birth_year
+DECLARE STRING name = "Yan"
+DECLARE CHAR section = 'A'
+DECLARE BOOL is_enrolled = "TRUE"
+
+%% Testing chained assignment
+age = birth_year = 20
+
+%% Testing concatenation and printing
+PRINT: "--- Student Profile ---" & $
+PRINT: "Name: " & name & $
+PRINT: "Age: " & age & $
+PRINT: "Section: " & section & $
+PRINT: "Enrolled: " & is_enrolled & $
+
+END SCRIPT

@@ -1,0 +1,51 @@
+SCRIPT AREA
+START SCRIPT
+
+%% --- FULL INTEGRATION TEST (Increments 1 - 3) ---
+DECLARE STRING student_name
+DECLARE INT prelim, midterm, finals, average
+DECLARE BOOL is_valid
+
+PRINT: "--- LEXOR Grading System ---" & $
+PRINT: "Enter student name: "
+SCAN: student_name
+
+PRINT: "Enter Prelim, Midterm, and Final grades (e.g., 80, 85, 90): "
+SCAN: prelim, midterm, finals
+
+%% Increment 2 calculations
+average = (prelim + midterm + finals) / 3
+is_valid = (average >= 0 AND average <= 100)
+
+PRINT: $ & "--- Official Transcript ---" & $
+PRINT: "Student: " & student_name & $
+PRINT: "Average: " & average & $
+
+%% Increment 3 logic and nesting
+IF (NOT is_valid)
+START IF
+    PRINT: "Error: Invalid grades computed!" & $
+END IF
+ELSE
+START IF
+
+    IF (average >= 75)
+    START IF
+        PRINT: "Remarks: PASSED" & $
+        
+        IF (average >= 90)
+        START IF
+            PRINT: "Award: Outstanding Performance! [[]*[]]" & $
+        END IF
+    END IF
+    ELSE
+    START IF
+        PRINT: "Remarks: FAILED" & $
+        PRINT: "Action: Required to retake next semester." & $
+    END IF
+
+END IF
+
+END SCRIPT
+
+saasa

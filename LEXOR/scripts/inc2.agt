@@ -1,0 +1,23 @@
+SCRIPT AREA
+START SCRIPT
+
+%% --- INCREMENT 2 TEST: Math, Logic & I/O ---
+DECLARE INT num1, num2, math_result, neg_val
+DECLARE BOOL logic_result
+
+PRINT: "--- Calculator Test ---" & $
+PRINT: "Enter two numbers separated by a comma (e.g., 10, 3): "
+SCAN: num1, num2
+
+%% Testing arithmetic and unary
+math_result = ((num1 * 5) / 2) + (num2 % 3)
+neg_val = -num1
+
+%% Testing relational and logical operators
+logic_result = (num1 > num2 AND num2 <> 0)
+
+PRINT: "Math Equation Result: " & math_result & $
+PRINT: "Negative of First Number: " & neg_val & $
+PRINT: "Is Num1 > Num2 AND Num2 != 0? " & logic_result & $
+
+END SCRIPT

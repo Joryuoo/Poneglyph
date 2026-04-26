@@ -1,0 +1,35 @@
+SCRIPT AREA
+START SCRIPT
+
+%% --- INCREMENT 3 TEST: Control Flow ---
+DECLARE INT health = 45
+DECLARE BOOL has_shield = "TRUE"
+
+PRINT: "--- Game Status Check ---" & $
+PRINT: "Health: " & health & $
+
+IF (health > 80)
+START IF
+    PRINT: "Status: Player is healthy." & $
+END IF
+ELSE IF (health > 30)
+START IF
+    PRINT: "Status: Player is wounded." & $
+    
+    %% Testing Nested IF inside an ELSE IF
+    IF (has_shield == "TRUE")
+    START IF
+        PRINT: "Action: Shield is absorbing damage!" & $
+    END IF
+    ELSE
+    START IF
+        PRINT: "Action: Take cover immediately!" & $
+    END IF
+
+END IF
+ELSE
+START IF
+    PRINT: "Status: Player is critically injured." & $
+END IF
+
+END SCRIPT

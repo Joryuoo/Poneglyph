@@ -1,0 +1,27 @@
+%% this is a sample program in LEXOR
+%%  SCRIPT AREA
+%%  START SCRIPT
+%%  DECLARE INT x, y, z=5
+%%  DECLARE CHAR a_1='n'
+%%  DECLARE BOOL t="TRUE"
+%%  x=y=4
+%%  a_1='c'
+%% this is a comment
+%%  PRINT: x & t & z & $ & a_1 & [#] & "last"
+%%  END SCRIPT
+
+%%  SCRIPT AREA
+%%  START SCRIPT
+%%  DECLARE INT xyz, abc=100
+%%    xyz= ((abc *5)/10 + 10) * -1
+%%    PRINT: [[] & xyz & []]
+%%    END SCRIPT
+
+%%  SCRIPT AREA
+%%    START SCRIPT
+%%    DECLARE INT a=100, b=200, c=300
+%%    DECLARE BOOL d="FALSE"
+%%    d = (a < b AND c <>200)
+%%    PRINT: d
+%%    END SCRIPT
+

@@ -1,0 +1,18 @@
+SCRIPT AREA
+START SCRIPT
+
+%% Declare variables for testing input
+DECLARE INT num1, num2, sum
+DECLARE STRING name
+
+PRINT: "What is your name? "
+SCAN: name
+PRINT: "Hello, " & name & "! Welcome to LEXOR." & $ & $
+
+PRINT: "Please enter two numbers separated by a comma (e.g., 10, 20): "
+SCAN: num1, num2
+
+sum = num1 + num2
+PRINT: "The sum of " & num1 & " and " & num2 & " is: " & sum & $
+
+END SCRIPT

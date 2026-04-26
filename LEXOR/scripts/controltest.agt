@@ -1,0 +1,39 @@
+SCRIPT AREA
+START SCRIPT
+
+DECLARE INT score = 85
+DECLARE BOOL is_passed = "FALSE"
+
+PRINT: "--- Exam Results ---" & $
+PRINT: "Your score is: " & score & $
+
+%% Main IF statement
+IF (score >= 75)
+START IF
+    is_passed = "TRUE"
+    PRINT: "Status: You passed the exam!" & $
+    
+    %% NESTED IF: Checking the grade tier
+    IF (score >= 90)
+    START IF
+        PRINT: "Tier: Excellent!" & $
+    END IF
+    ELSE IF (score >= 80)
+    START IF
+        PRINT: "Tier: Great job!" & $
+    END IF
+    ELSE
+    START IF
+        PRINT: "Tier: You barely made it." & $
+    END IF
+    
+END IF
+ELSE
+START IF
+    PRINT: "Status: You failed the exam." & $
+    PRINT: "Tier: Better luck next time." & $
+END IF
+
+PRINT: $ & "Did the student pass? " & is_passed & $
+
+END SCRIPT
