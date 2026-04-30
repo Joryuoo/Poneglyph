@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #007aff; /* Apple-like blue */
+  --color-brand-hover: #0056b3;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  :root {
+    --bg-main: #f5f5f7; /* Very light gray, typical Apple background */
+    --bg-surface: #ffffff;
+    --border-color: #e5e5ea;
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --divider-color: #d1d1d6;
+  }
+
+  /* Optional Dark Mode variables */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-main: #000000;
+      --bg-surface: #1c1c1e;
+      --border-color: #38383a;
+      --text-primary: #f5f5f7;
+      --text-secondary: #8e8e93;
+      --divider-color: #38383a;
+    }
+  }
+
+  html, body, #root {
+    @apply h-full w-full m-0 p-0 overflow-hidden font-sans;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+}
+
+@layer utilities {
+  .bg-main { background-color: var(--bg-main); }
+  .bg-surface { background-color: var(--bg-surface); }
+  .border-subtle { border-color: var(--border-color); }
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .bg-divider { background-color: var(--divider-color); }
+  
+  .shadow-apple {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+  
+  .shadow-apple-dark {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Prism syntax highlighting base theme (light) */
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #333;
+  background: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  direction: ltr;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  tab-size: 4;
+  hyphens: none;
+}
+
+/* Agartha Syntax Highlighting */
+
+.token.comment {
+  color: #8e8e93; /* Slate Gray */
+  font-style: italic;
+}
+
+.token.keyword {
+  color: #5856d6; /* Deep Purple */
+  font-weight: 600;
+}
+
+.token.datatype {
+  color: #5ac8fa; /* Teal/Cyan */
+  font-weight: 600;
+}
+
+.token.logical {
+  color: #ff2d55; /* Pink/Magenta */
+  font-weight: 600;
+}
+
+.token.boolean {
+  color: #af52de; /* Bold Purple */
+  font-weight: bold;
+}
+
+.token.string {
+  color: #34c759; /* Forest Green */
+}
+
+.token.symbol {
+  color: #ff9500; /* Subtle Accent Orange */
+}
+
+.token.number {
+  color: #ff3b30; /* iOS Red */
+}
+
+.token.operator,
+.token.punctuation {
+  color: #8e8e93; /* Subtle gray for punctuation */
+}
+
+@media (prefers-color-scheme: dark) {
+  code[class*="language-"],
+  pre[class*="language-"] {
+    color: #f5f5f7;
+  }
+  
+  .token.keyword {
+    color: #5e5ce6;
+  }
+  
+  .token.datatype {
+    color: #64d2ff;
+  }
+  
+  .token.logical {
+    color: #ff375f;
+  }
+  
+  .token.boolean {
+    color: #bf5af2;
+  }
+  
+  .token.string {
+    color: #32d74b;
+  }
+  
+  .token.symbol {
+    color: #ff9f0a;
+  }
+  
+  .token.number {
+    color: #ff453a;
+  }
+  
+  .token.operator,
+  .token.punctuation {
+    color: #98989d;
+  }
+}

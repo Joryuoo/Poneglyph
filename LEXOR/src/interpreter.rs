@@ -5,17 +5,22 @@ use std::io::{self, Write};
 
 pub struct Interpreter {
     memory: HashMap<String, Expression>,
+    pub output: String,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Interpreter { memory: HashMap::new() }
+        Interpreter { 
+            memory: HashMap::new(), 
+            output: String::new(),
+        }
     }
 
     pub fn interpret(&mut self, program: Program) {
         for stmt in program.statements {
             if let Err(e) = self.execute_statement(stmt) {
-                println!("Runtime Error: {}", e);
+                //println!("Runtime Error: {}", e); //for cli only
+                self.output.push_str(&format!("Runtime Error: {}\n", e)); // for frontend
                 break; 
             }
         }
@@ -118,8 +123,9 @@ impl Interpreter {
             // 4. Display (PRINT: x & "hello")
             Statement::Print(expr) => {
                 let val = self.evaluate_expression(expr)?;
-                // LEXOR uses PRINT: which outputs directly. 
-                print!("{}", self.stringify(val)); 
+                //for cli 
+                //print!("{}", self.stringify(val)); 
+                self.output.push_str(&self.stringify(val)); // for frontend
                 io::stdout().flush().unwrap();
                 Ok(())
             }

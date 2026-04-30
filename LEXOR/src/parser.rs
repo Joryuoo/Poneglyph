@@ -2,66 +2,75 @@ use crate::token::Token;
 use crate::ast::{Program, Statement, Expression};
 
 pub struct Parser {
-    tokens: Vec<(Token, usize)>, // Accepts the new Tuple!
+    tokens: Vec<(Token, usize)>, 
     current: usize,
+    seen_executable: bool, // Tracks if we have passed the DECLARE phase
 }
 
 impl Parser {
     // CONSTRUCTOR 
     pub fn new(tokens: Vec<(Token, usize)>) -> Self {
-        Parser { tokens, current: 0 }
+        Parser { tokens, current: 0, seen_executable: false }
     }
 
     fn line(&self) -> usize {
         if self.is_at_end() {
-            // If we are at the end, get the line number of the very last token
             self.tokens.last().map(|(_, l)| *l).unwrap_or(1)
         } else {
-            // Otherwise, get the line number of the current token
             self.tokens[self.current].1
         }
     }
 
-    // --- MAIN ENGINE ---
+    // Gets the line number of the previous token
+    fn previous_line(&self) -> usize {
+        if self.current > 0 {
+            self.tokens[self.current - 1].1
+        } else {
+            0
+        }
+    }
+
+    // MAIN ENGINE 
     pub fn parse(&mut self) -> Result<Program, String> {
-        // Empty file check
         if self.is_at_end() {
             return Err("Syntax Error: Migo, your file is completely empty! You need at least a 'SCRIPT AREA'.".to_string());
         }
 
         let mut statements = Vec::new();
         
-        // Strict Starting Boundaries
         self.consume(&Token::ScriptArea, "LEXOR programs MUST begin with 'SCRIPT AREA'")?;
         self.consume(&Token::StartScript, "Expected 'START SCRIPT' after 'SCRIPT AREA'")?;
 
+        let mut last_line = 0;
+
         // Execution Loop
         while !self.is_at_end() && !self.check(&Token::EndScript) {
+            
+            //Enforce one statement per line 
+            let current_line = self.line();
+            if last_line != 0 && current_line == last_line {
+                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed. Please use a newline.", current_line));
+            }
+
             statements.push(self.parse_statement()?); 
+            last_line = self.previous_line();
         }
         
-        // Strict Ending Boundary
         self.consume(&Token::EndScript, "LEXOR programs MUST finish with 'END SCRIPT'")?;
 
-        // 5. The "Only One" Boundary Enforcer
         if !self.is_at_end() {
             let rogue_token = self.peek().unwrap();
-            
-            // Did they type a second END SCRIPT?
             if std::mem::discriminant(rogue_token) == std::mem::discriminant(&Token::EndScript) {
                 return Err(format!("Syntax Error on Line {}: You can only have ONE 'END SCRIPT' per file!", self.line()));
             }
-            
-            // Did they type random variables outside the boundaries?
             return Err(format!("Syntax Error on Line {}: No code is allowed after 'END SCRIPT'! I found: {:?}", self.line(), rogue_token));
         }
 
         Ok(Program { statements })
     }
 
-    // --- STATEMENT ROUTER ---
+    // STATEMENT ROUTER 
     fn parse_statement(&mut self) -> Result<Statement, String> {
-        // DUPLICATE SCRIPT ENFORCER 
         if self.check(&Token::ScriptArea) {
             return Err(format!("Syntax Error on Line {}: You already declared 'SCRIPT AREA'. You can only have ONE per file!", self.line()));
         }
@@ -69,14 +78,23 @@ impl Parser {
             return Err(format!("Syntax Error on Line {}: You already declared 'START SCRIPT'. You can only have ONE per file!", self.line()));
         }
 
-        if self.check(&Token::Declare) { return self.parse_declaration(); }
+        // Strict Declaration Enforcement 
+        if self.check(&Token::Declare) { 
+            if self.seen_executable {
+                return Err(format!("Syntax Error on Line {}: Declarations must be placed immediately after START SCRIPT. You cannot declare variables after executable code.", self.line()));
+            }
+            return self.parse_declaration(); 
+        }
+
+        // parse anything that isn't DECLARE, we lock out future declarations
+        self.seen_executable = true;
+
         if self.check(&Token::Print) { return self.parse_print(); }
         if self.check(&Token::Scan) { return self.parse_scan(); }
         if self.check(&Token::If) { return self.parse_if(); }
         if self.check(&Token::For) { return self.parse_for(); }
         if self.check(&Token::RepeatWhen) { return self.parse_repeat(); }
         
-        // Default to Assignment (x = y = 5)
         self.parse_assignment()
     }
 
@@ -170,8 +188,14 @@ impl Parser {
 
         self.consume(&Token::StartIf, "Expected 'START IF'.")?;
         let mut body = Vec::new();
+        let mut last_line = 0;
         while !self.check(&Token::EndIf) && !self.check(&Token::ElseIf) && !self.check(&Token::Else) && !self.is_at_end() {
+            let current_line = self.line();
+            if last_line != 0 && current_line == last_line {
+                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
+            }
             body.push(self.parse_statement()?);
+            last_line = self.previous_line();
         }
         self.consume(&Token::EndIf, "Expected 'END IF'.")?;
 
@@ -183,8 +207,14 @@ impl Parser {
             
             self.consume(&Token::StartIf, "Expected 'START IF'.")?;
             let mut elif_body = Vec::new();
+            let mut elif_last = 0;
             while !self.check(&Token::EndIf) && !self.is_at_end() {
+                let current_line = self.line();
+                if elif_last != 0 && current_line == elif_last {
+                    return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
+                }
                 elif_body.push(self.parse_statement()?);
+                elif_last = self.previous_line();
             }
             self.consume(&Token::EndIf, "Expected 'END IF'.")?;
             else_ifs.push((cond, elif_body));
@@ -194,8 +224,14 @@ impl Parser {
         if self.match_type(&[Token::Else]) {
             self.consume(&Token::StartIf, "Expected 'START IF' after ELSE.")?;
             let mut e_body = Vec::new();
+            let mut e_last = 0;
             while !self.check(&Token::EndIf) && !self.is_at_end() {
+                let current_line = self.line();
+                if e_last != 0 && current_line == e_last {
+                    return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
+                }
                 e_body.push(self.parse_statement()?);
+                e_last = self.previous_line();
             }
             self.consume(&Token::EndIf, "Expected 'END IF'.")?;
             else_body = Some(e_body);
@@ -219,8 +255,14 @@ impl Parser {
 
         self.consume(&Token::StartFor, "Expected 'START FOR'.")?;
         let mut body = Vec::new();
+        let mut last_line = 0;
         while !self.check(&Token::EndFor) && !self.is_at_end() {
+            let current_line = self.line();
+            if last_line != 0 && current_line == last_line {
+                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
+            }
             body.push(self.parse_statement()?);
+            last_line = self.previous_line();
         }
         self.consume(&Token::EndFor, "Expected 'END FOR'.")?;
 
@@ -235,15 +277,21 @@ impl Parser {
 
         self.consume(&Token::StartRepeat, "Expected 'START REPEAT'.")?;
         let mut body = Vec::new();
+        let mut last_line = 0;
         while !self.check(&Token::EndRepeat) && !self.is_at_end() {
+            let current_line = self.line();
+            if last_line != 0 && current_line == last_line {
+                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
+            }
             body.push(self.parse_statement()?);
+            last_line = self.previous_line();
         }
         self.consume(&Token::EndRepeat, "Expected 'END REPEAT'.")?;
 
         Ok(Statement::Repeat { condition, body })
     }
 
-    // EXPRESSION WATERFALL??
+    // EXPRESSION WATERFALL
 
     fn parse_expression(&mut self) -> Result<Expression, String> {
         self.parse_logical_or()
@@ -319,7 +367,6 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, String> {
-        // FIX: Grab the line number FIRST, before we mutably borrow `self` to advance.
         let current_line = self.line(); 
         
         let token = self.advance()
@@ -397,7 +444,6 @@ impl Parser {
         if self.check(token_type) { 
             Ok(self.advance().unwrap()) 
         } else { 
-            // Automatically attaches the line number to ANY missing token error!
             Err(format!("Syntax Error on Line {}: {}", self.line(), message)) 
         }
     }
