@@ -1,19 +1,23 @@
 use crate::token::Token;
 
-pub fn tokenize(input: &str) -> Result<Vec<Token>, String>{ // returns vector of tokens if valid else an error string
+pub fn tokenize(input: &str) -> Result<Vec<(Token, usize)>, String>{ 
     let mut tokens = Vec::new();
-    let mut  chars = input.chars().peekable();
+    let mut chars = input.chars().peekable();
+    let mut current_line = 1;
 
-    //similar to for each loop
     while let Some(&c) = chars.peek(){
 
-        //ignore white space
-        if c.is_whitespace(){
-            chars.next(); // consume
+        // Count newlines for our error tracker!
+        if c == '\n' {
+            current_line += 1; 
+            chars.next();
+            continue;
+        } else if c.is_whitespace(){
+            chars.next(); 
             continue;
         }
 
-        //pang check sa keyword / identifiers
+        // pang check sa keyword / identifiers
         if c.is_alphabetic() || c == '_'{
             let mut word = String::new();
 
@@ -21,19 +25,16 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String>{ // returns vector of
                 if ch.is_alphanumeric() || ch == '_' {
                     word.push(ch);
                     chars.next();
-                    // .next() will consume the said character
-                    // similar siya sa .deque() sa queue maong dili na siya ma read sa outer loop once ma consume
                 } else{
                     break;
                 }
             }
 
-            //for multi word reading like "START SCRIPT", "SCRIPT AREA", and etc
-
+            // for multi word reading like "START SCRIPT", "SCRIPT AREA", etc.
             let mut lookahead = chars.clone();
             while let Some(&ws) = lookahead.peek(){
                 if ws.is_whitespace(){
-                    lookahead.next(); //consume whitespace
+                    lookahead.next(); 
                 } else{
                     break;
                 }
@@ -48,43 +49,35 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String>{ // returns vector of
                     break;
                 }
             }
-            //pattern matching?
 
             let token = match word.as_str(){
-                //multiword
-                //SCRIPT AREA
+                // multiword
                 "SCRIPT" => {
                     if nextword == "AREA" {
                         chars = lookahead; 
                         Token::ScriptArea 
                     } else{
-                        return Err(format!("Error"));
+                        return Err(format!("Lexer Error on Line {}: Invalid syntax after SCRIPT", current_line));
                     }
                 },
-
-                // START SCRIPT, START IF, START FOR, START 
                 "START" => {
                     match nextword.as_str(){
                         "SCRIPT" => {chars = lookahead; Token::StartScript},
                         "IF" => {chars = lookahead; Token::StartIf},
                         "FOR" => {chars = lookahead; Token::StartFor},
                         "REPEAT" => {chars = lookahead; Token::StartRepeat},
-                        _ => return Err(format!("Error!")),
+                        _ => return Err(format!("Lexer Error on Line {}: Invalid START command", current_line)),
                     }
-                    
                 },
-                // END SCRIPT, END IF, END FOR, END REPEAT
                 "END" => {
                     match nextword.as_str(){
                         "SCRIPT" => {chars = lookahead; Token::EndScript},
                         "IF" => {chars = lookahead; Token::EndIf},
                         "FOR" => {chars = lookahead; Token::EndFor},
                         "REPEAT" => {chars = lookahead; Token::EndRepeat},
-                        _ => return Err(format!("Error!")),
+                        _ => return Err(format!("Lexer Error on Line {}: Invalid END command", current_line)),
                     }
                 },
-
-                //Else If
                 "ELSE" => {
                     if nextword == "IF"{
                         chars = lookahead;
@@ -93,190 +86,167 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String>{ // returns vector of
                         Token::Else
                     }
                 },
-
-                // Repeat When
                 "REPEAT" => {
                     if nextword == "WHEN"{
                         chars = lookahead;
                         Token::RepeatWhen
                     } else{
-                        return Err(format!("Error"));
+                        return Err(format!("Lexer Error on Line {}: Invalid REPEAT command", current_line));
                     }
                 },
-                //SingleWord Keywords
+                // SingleWord Keywords
                 "DECLARE" => Token::Declare,
-                //data types
                 "INT" => Token::IntType,
                 "FLOAT" => Token::FloatType,
                 "CHAR" => Token::CharType,
-                "STRING" => Token::StringType, //gi add rasad koni cuz y nut
+                "STRING" => Token::StringType, 
                 "BOOL" => Token::BoolType,
-                //control
                 "IF" => Token::If,
                 "FOR" => Token::For,
-
-                // io
                 "PRINT" => Token::Print,
                 "SCAN" => Token::Scan,
-
                 "AND" => Token::And,
                 "OR" => Token::Or,
                 "NOT" => Token::Not,
-                
-                //if not any then it's an identifier
                 _ => Token::Identifier(word),
-
             };
-            tokens.push(token);
+    
+            tokens.push((token, current_line));
             continue;
         }
 
-        //for numbers
+        // for numbers
         if c.is_ascii_digit(){
             let mut num_str = String::new();
             let mut has_decimal = false;
 
-            //for numbers
             while let Some(&ch) = chars.peek(){
                 if ch.is_ascii_digit(){
                     num_str.push(ch);
                     chars.next();
-                } else if ch == '.' && !has_decimal{ //for floating point values 
+                } else if ch == '.' && !has_decimal{ 
                     num_str.push(ch);
                     has_decimal = true;
                     chars.next();
                 } else if ch == '.' && has_decimal{
-                    return Err(format!("Error MIGO")) //temporary only
+                    return Err(format!("Lexer Error on Line {}: Multiple decimals found in number", current_line)); 
                 } else{
                     break;
                 }
             }
 
             if has_decimal{
-                //check if numerical values are valid
                 if let Ok(val) = num_str.parse::<f64>(){
-                    tokens.push(Token::FloatLiteral(val));
+                    tokens.push((Token::FloatLiteral(val), current_line));
                 } 
             } else{
                 if let Ok(val) = num_str.parse::<i32>(){
-                    tokens.push(Token::IntLiteral(val));
+                    tokens.push((Token::IntLiteral(val), current_line));
                 }
             }
             continue;
-
         }
 
-        //for operators and other symbols
+        // for operators and other symbols
         match c{
             '=' => {
-                chars.next(); //consume the initial character
+                chars.next(); 
                 if let Some(&'=') = chars.peek(){  
-                    tokens.push(Token::Equal);
-                    chars.next(); // consume the character
-                    
+                    tokens.push((Token::Equal, current_line));
+                    chars.next(); 
                 } else{
-                    tokens.push(Token::Assign);
+                    tokens.push((Token::Assign, current_line));
                 }
             }
 
             '<' => {
-                chars.next(); // consume the initial character
+                chars.next(); 
                 if let Some(&'=') = chars.peek(){
-                    tokens.push(Token::LessThanOrEqual);
-                    chars.next(); //consume
+                    tokens.push((Token::LessThanOrEqual, current_line));
+                    chars.next(); 
                 } else if let Some(&'>') = chars.peek(){
-                    tokens.push(Token::NotEqual);
+                    tokens.push((Token::NotEqual, current_line));
                     chars.next();
                 } else{
-                    tokens.push(Token::LessThan);
-
+                    tokens.push((Token::LessThan, current_line));
                 }
             }
             
             '>' => {
                 chars.next();
                 if let Some(&'=') = chars.peek(){
-                    tokens.push(Token::GreaterThanOrEqual);
-                    chars.next(); //consume num num
+                    tokens.push((Token::GreaterThanOrEqual, current_line));
+                    chars.next(); 
                 } else{
-                    tokens.push(Token::GreaterThan);
+                    tokens.push((Token::GreaterThan, current_line));
                 }
             }
             
-            // % - modulo
-            // %% - comment
+            // % - modulo, %% - comment
             '%' => {
                 chars.next();
                 if let Some(&'%') = chars.peek(){
                     while let Some(&ch) = chars.peek(){
-                        if ch == '\n' {
-                            break;
+                        if ch == '\n' { // end of comment
+                            break; 
                         }
-
-                        chars.next(); //consume everything util newline
+                        chars.next(); 
                     }
-                    continue; // balik babaw sa loop to check for other tokens
+                    continue; 
                 } else{
-                    tokens.push(Token::Modulo); chars.next();
+                    tokens.push((Token::Modulo, current_line)); 
+                    chars.next();
                 }
             }
 
-            //for string literal
+            // for string literal
             '"' => {
-                chars.next(); // consume ang una na "
-                let mut val = String::new();  // string literal
+                chars.next(); 
+                let mut val = String::new();  
                 while let Some(&ch) = chars.peek(){
-                    if ch == '"' { //end string
+                    if ch == '"' { 
                         break;
                     }
                     val.push(ch);
-                    chars.next(); //consume character
+                    chars.next(); 
                 }
-                //check if naa ang end quote
+                
                 if let Some(&'"') = chars.peek(){
-                    chars.next(); // consume end quote
-                    //rules ni boybesfren  
-                    //BOOL – represents the literals true or false
+                    chars.next(); 
                     if val == "TRUE" {
-                        tokens.push(Token::BoolLiteral(true));
+                        tokens.push((Token::BoolLiteral(true), current_line));
                     } else if val == "FALSE" {
-                        tokens.push(Token::BoolLiteral(false));
+                        tokens.push((Token::BoolLiteral(false), current_line));
                     } else {
-                        tokens.push(Token::StringLiteral(val));
+                        tokens.push((Token::StringLiteral(val), current_line));
                     }
-                    
                 } else{
-                    return Err(format!("Unsa mani dong! Asa man imong end quote dong?"));
+                    return Err(format!("Lexer Error on Line {}: Asa man imong end quote dong?", current_line));
                 }
             }
 
-            //character literal
+            // character literal
             '\'' => {
-                chars.next(); //consume the 1st single quote
+                chars.next(); 
                 if let Some(&ch) = chars.peek(){
-                    chars.next(); //consume the character
-
-                    if let Some(&'\'') = chars.peek() { //look for the end single quote
-                        chars.next(); //consume the end single quote
-                        tokens.push(Token::CharLiteral(ch)); //store the character literal
+                    chars.next(); 
+                    if let Some(&'\'') = chars.peek() { 
+                        chars.next(); 
+                        tokens.push((Token::CharLiteral(ch), current_line)); 
                     } else{
-                        return Err(format!("Error no enq quote"))
+                        return Err(format!("Lexer Error on Line {}: Missing end quote for character", current_line));
                     }
                 }
-
             }
-
 
             // for escape codes
             '[' => {
-                chars.next(); // Consume '['
+                chars.next(); 
                 let mut val = String::new();
 
-                // If the very first thing inside the bracket is ANOTHER bracket (like []]), 
-                // capture it instead of breaking immediately
                 if let Some(&']') = chars.peek() {
                     val.push(']');
-                    chars.next(); // consume the inner ']'
+                    chars.next(); 
                 }
 
                 while let Some(&ch) = chars.peek() {
@@ -286,33 +256,27 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String>{ // returns vector of
                 }
                 
                 if let Some(&']') = chars.peek() {
-                    chars.next(); // Consume closing ']'
-                    tokens.push(Token::StringLiteral(val));
+                    chars.next(); 
+                    tokens.push((Token::StringLiteral(val), current_line));
                 } else {
-                    return Err(format!("Lexer Error: Missing closing bracket ']'."));
+                    return Err(format!("Lexer Error on Line {}: Missing closing bracket ']'", current_line));
                 }
             }
 
-
-
-            //math op
-            '/' => {
-                tokens.push(Token::Divide);
-                chars.next(); 
-            }
-            '+' => {tokens.push(Token::Add); chars.next();}
-            '-' => {tokens.push(Token::Subtract); chars.next();}
-            '*' => {tokens.push(Token::Multiply); chars.next();}
-            '^' => {tokens.push(Token::Exponentiate); chars.next();} //gi add ra koni
-            '$' => {tokens.push(Token::Dollar); chars.next();}
-            ',' => {tokens.push(Token::Comma); chars.next();}
-            ':' => {tokens.push(Token::Colon) ; chars.next();}
-            '&' => {tokens.push(Token::Concat); chars.next();}
-            '(' => {tokens.push(Token::LeftParen); chars.next();}
-            ')' => {tokens.push(Token::RightParen); chars.next();}
+            // single character operators
+            '/' => { tokens.push((Token::Divide, current_line)); chars.next(); }
+            '+' => { tokens.push((Token::Add, current_line)); chars.next(); }
+            '-' => { tokens.push((Token::Subtract, current_line)); chars.next(); }
+            '*' => { tokens.push((Token::Multiply, current_line)); chars.next(); }
+            '^' => { tokens.push((Token::Exponentiate, current_line)); chars.next(); } 
+            '$' => { tokens.push((Token::Dollar, current_line)); chars.next(); }
+            ',' => { tokens.push((Token::Comma, current_line)); chars.next(); }
+            ':' => { tokens.push((Token::Colon, current_line)); chars.next(); }
+            '&' => { tokens.push((Token::Concat, current_line)); chars.next(); }
+            '(' => { tokens.push((Token::LeftParen, current_line)); chars.next(); }
+            ')' => { tokens.push((Token::RightParen, current_line)); chars.next(); }
             
-
-            _ => return Err(format!("Unsa mani dong!"))
+            _ => return Err(format!("Lexer Error on Line {}: Unsa mani dong! Unrecognized symbol '{}'", current_line, c))
         }
     }
     Ok(tokens)
