@@ -23,6 +23,7 @@ pub fn run_file(filepath: &str) {
                 Ok(program) => {
                     let mut my_interpreter = interpreter::Interpreter::new();
                     my_interpreter.interpret(program);
+                    println!("{}", my_interpreter.output);
                 },
                 Err(e) => println!("{}", e), 
             }

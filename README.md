@@ -45,7 +45,7 @@ This creates an executable in `target/release/agartha` (or `agartha.exe` on Wind
 
 ```bash
 cd Poneglyph/LEXOR
-wasm-pack build --target web --out-dir ../Frontend/src/pkg
+wasm-pack build --target web --release
 ```
 
 This generates WebAssembly bindings in the `pkg/` directory for use with the frontend.
