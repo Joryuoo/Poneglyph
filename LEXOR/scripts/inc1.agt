@@ -4,7 +4,8 @@ START SCRIPT
 %% --- INCREMENT 1 TEST: Basics & Printing ---
 %% Testing variable declarations
 DECLARE INT age, birth_year
-DECLARE STRING name = "Yan"
+DECLARE STRING first_name = "Yan"
+DECLARE STRING last_name = "Brah"
 DECLARE CHAR section = 'A'
 DECLARE BOOL is_enrolled = "TRUE"
 
@@ -13,7 +14,7 @@ age = birth_year = 20
 
 %% Testing concatenation and printing
 PRINT: "--- Student Profile ---" & $
-PRINT: "Name: " & name & $
+PRINT: "Name: " & first_name & " " & last_name & $
 PRINT: "Age: " & age & $
 PRINT: "Section: " & section & $
 PRINT: "Enrolled: " & is_enrolled & $
