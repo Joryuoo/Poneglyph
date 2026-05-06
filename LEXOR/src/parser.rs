@@ -4,13 +4,14 @@ use crate::ast::{Program, Statement, Expression};
 pub struct Parser {
     tokens: Vec<(Token, usize)>, 
     current: usize,
-    seen_executable: bool, // Tracks if we have passed the DECLARE phase
+    seen_executable: bool, 
+    last_parsed_line: usize, // --- NEW: Tracks the line of the previous statement ---
 }
 
 impl Parser {
     // CONSTRUCTOR 
     pub fn new(tokens: Vec<(Token, usize)>) -> Self {
-        Parser { tokens, current: 0, seen_executable: false }
+        Parser { tokens, current: 0, seen_executable: false, last_parsed_line: 0 }
     }
 
     fn line(&self) -> usize {
@@ -21,7 +22,7 @@ impl Parser {
         }
     }
 
-    // Gets the line number of the previous token
+    // --- NEW HELPER: Get the line of the token we just processed ---
     fn previous_line(&self) -> usize {
         if self.current > 0 {
             self.tokens[self.current - 1].1
@@ -30,7 +31,22 @@ impl Parser {
         }
     }
 
-    // MAIN ENGINE 
+    // --- THE BOUNCER: Enforces 1 statement per line ---
+    fn step_statement(&mut self) -> Result<Statement, String> {
+        let current_line = self.line();
+        
+        // If the NEW statement starts on the exact same line the LAST statement ended on...
+        if self.last_parsed_line != 0 && current_line == self.last_parsed_line {
+            return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed. Please use a newline.", current_line));
+        }
+        
+        let stmt = self.parse_statement()?; // Parse the statement normally
+        self.last_parsed_line = self.previous_line(); // Record exactly where this statement ended
+        
+        Ok(stmt)
+    }
+
+    // --- MAIN ENGINE ---
     pub fn parse(&mut self) -> Result<Program, String> {
         if self.is_at_end() {
             return Err("Syntax Error: Migo, your file is completely empty! You need at least a 'SCRIPT AREA'.".to_string());
@@ -41,19 +57,9 @@ impl Parser {
         self.consume(&Token::ScriptArea, "LEXOR programs MUST begin with 'SCRIPT AREA'")?;
         self.consume(&Token::StartScript, "Expected 'START SCRIPT' after 'SCRIPT AREA'")?;
 
-        let mut last_line = 0;
-
-        // Execution Loop
+        // Execution Loop - Now uses step_statement!
         while !self.is_at_end() && !self.check(&Token::EndScript) {
-            
-            //Enforce one statement per line 
-            let current_line = self.line();
-            if last_line != 0 && current_line == last_line {
-                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed. Please use a newline.", current_line));
-            }
-
-            statements.push(self.parse_statement()?); 
-            last_line = self.previous_line();
+            statements.push(self.step_statement()?); 
         }
         
         self.consume(&Token::EndScript, "LEXOR programs MUST finish with 'END SCRIPT'")?;
@@ -69,7 +75,7 @@ impl Parser {
         Ok(Program { statements })
     }
 
-    // STATEMENT ROUTER 
+    // --- STATEMENT ROUTER ---
     fn parse_statement(&mut self) -> Result<Statement, String> {
         if self.check(&Token::ScriptArea) {
             return Err(format!("Syntax Error on Line {}: You already declared 'SCRIPT AREA'. You can only have ONE per file!", self.line()));
@@ -78,7 +84,7 @@ impl Parser {
             return Err(format!("Syntax Error on Line {}: You already declared 'START SCRIPT'. You can only have ONE per file!", self.line()));
         }
 
-        // Strict Declaration Enforcement 
+        // --- BUG 1 FIX: Blocks declarations after executable code ---
         if self.check(&Token::Declare) { 
             if self.seen_executable {
                 return Err(format!("Syntax Error on Line {}: Declarations must be placed immediately after START SCRIPT. You cannot declare variables after executable code.", self.line()));
@@ -86,7 +92,7 @@ impl Parser {
             return self.parse_declaration(); 
         }
 
-        // parse anything that isn't DECLARE, we lock out future declarations
+        // Lock out future declarations
         self.seen_executable = true;
 
         if self.check(&Token::Print) { return self.parse_print(); }
@@ -188,14 +194,8 @@ impl Parser {
 
         self.consume(&Token::StartIf, "Expected 'START IF'.")?;
         let mut body = Vec::new();
-        let mut last_line = 0;
         while !self.check(&Token::EndIf) && !self.check(&Token::ElseIf) && !self.check(&Token::Else) && !self.is_at_end() {
-            let current_line = self.line();
-            if last_line != 0 && current_line == last_line {
-                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
-            }
-            body.push(self.parse_statement()?);
-            last_line = self.previous_line();
+            body.push(self.step_statement()?); // Now uses step_statement!
         }
         self.consume(&Token::EndIf, "Expected 'END IF'.")?;
 
@@ -207,14 +207,8 @@ impl Parser {
             
             self.consume(&Token::StartIf, "Expected 'START IF'.")?;
             let mut elif_body = Vec::new();
-            let mut elif_last = 0;
             while !self.check(&Token::EndIf) && !self.is_at_end() {
-                let current_line = self.line();
-                if elif_last != 0 && current_line == elif_last {
-                    return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
-                }
-                elif_body.push(self.parse_statement()?);
-                elif_last = self.previous_line();
+                elif_body.push(self.step_statement()?); // Now uses step_statement!
             }
             self.consume(&Token::EndIf, "Expected 'END IF'.")?;
             else_ifs.push((cond, elif_body));
@@ -224,14 +218,8 @@ impl Parser {
         if self.match_type(&[Token::Else]) {
             self.consume(&Token::StartIf, "Expected 'START IF' after ELSE.")?;
             let mut e_body = Vec::new();
-            let mut e_last = 0;
             while !self.check(&Token::EndIf) && !self.is_at_end() {
-                let current_line = self.line();
-                if e_last != 0 && current_line == e_last {
-                    return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
-                }
-                e_body.push(self.parse_statement()?);
-                e_last = self.previous_line();
+                e_body.push(self.step_statement()?); // Now uses step_statement!
             }
             self.consume(&Token::EndIf, "Expected 'END IF'.")?;
             else_body = Some(e_body);
@@ -244,6 +232,7 @@ impl Parser {
         self.advance(); 
         self.consume(&Token::LeftParen, "Expected '(' after FOR.")?;
         
+        // Allowed on the same line since they are strictly part of the FOR construct
         let initialization = Box::new(self.parse_assignment()?);
         self.consume(&Token::Comma, "Expected ',' after initialization in FOR loop.")?;
         
@@ -255,14 +244,8 @@ impl Parser {
 
         self.consume(&Token::StartFor, "Expected 'START FOR'.")?;
         let mut body = Vec::new();
-        let mut last_line = 0;
         while !self.check(&Token::EndFor) && !self.is_at_end() {
-            let current_line = self.line();
-            if last_line != 0 && current_line == last_line {
-                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
-            }
-            body.push(self.parse_statement()?);
-            last_line = self.previous_line();
+            body.push(self.step_statement()?); // Now uses step_statement!
         }
         self.consume(&Token::EndFor, "Expected 'END FOR'.")?;
 
@@ -277,14 +260,8 @@ impl Parser {
 
         self.consume(&Token::StartRepeat, "Expected 'START REPEAT'.")?;
         let mut body = Vec::new();
-        let mut last_line = 0;
         while !self.check(&Token::EndRepeat) && !self.is_at_end() {
-            let current_line = self.line();
-            if last_line != 0 && current_line == last_line {
-                return Err(format!("Syntax Error on Line {}: Multiple statements on the same line are not allowed.", current_line));
-            }
-            body.push(self.parse_statement()?);
-            last_line = self.previous_line();
+            body.push(self.step_statement()?); // Now uses step_statement!
         }
         self.consume(&Token::EndRepeat, "Expected 'END REPEAT'.")?;
 
