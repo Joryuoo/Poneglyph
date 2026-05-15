@@ -1,7 +1,7 @@
 # LEXOR Interpreter Architecture
 
 ## 1. Project Overview
-[cite_start]This project is a custom interpreter for **LEXOR**, a strongly typed educational programming language. It is implemented entirely in Rust and follows a classic tree-walk interpreter architecture. 
+This project is a custom interpreter for **LEXOR**, a strongly typed educational programming language. It is implemented entirely in Rust and follows a classic tree-walk interpreter architecture. 
 
 The pipeline translates raw LEXOR source code into lexical tokens, builds an Abstract Syntax Tree (AST), and executes the nodes directly while maintaining runtime memory.
 

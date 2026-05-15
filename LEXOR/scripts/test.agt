@@ -1,8 +1,5 @@
 SCRIPT AREA
 START SCRIPT
-DECLARE INT x=5
-REPEAT WHEN (x) %% ERROR: 'x' is an INT, requires a BOOL expression
-START REPEAT
-x = x - 1
-END REPEAT
+DECLARE INT x = 10
+PRINT: "Age: " & x
 END SCRIPT

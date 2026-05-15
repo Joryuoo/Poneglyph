@@ -108,8 +108,8 @@ impl Parser {
 
     fn parse_declaration(&mut self) -> Result<Statement, String> {
         self.advance(); 
-        if !self.match_type(&[Token::IntType, Token::FloatType, Token::CharType, Token::BoolType, Token::StringType]) {
-            return Err(format!("Syntax Error on Line {}: Expected a valid data type after DECLARE.", self.line()));
+        if !self.match_type(&[Token::IntType, Token::FloatType, Token::CharType, Token::BoolType]) {
+            return Err(format!("Syntax Error on Line {}: Expected a valid LEXOR data type after DECLARE. Valid types are INT, FLOAT, CHAR, and BOOL.", self.line()));
         }
         let var_type = self.previous().clone();
         
