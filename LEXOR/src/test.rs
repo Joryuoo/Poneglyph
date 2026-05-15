@@ -41,7 +41,7 @@ pub fn run_test() {
             let mut parser = parser::Parser::new(tokens);
             match parser.parse() {
                 Ok(program) => {
-                    let mut my_interpreter = interpreter::Interpreter::new();
+                    let mut my_interpreter = interpreter::Interpreter::new("");
                     my_interpreter.interpret(program);
                 },
                 Err(e) => println!("{}", e), // Using your custom error formatting if you implemented errors.rs!

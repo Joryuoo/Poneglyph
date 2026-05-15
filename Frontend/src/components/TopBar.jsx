@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Settings, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { Play, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 
 export default function TopBar({
   isExecuting,
@@ -19,8 +19,7 @@ export default function TopBar({
         </div>
         
         <div className="flex flex-col">
-          <span className="text-sm font-semibold text-primary">main.agt</span>
-          <span className="text-[10px] uppercase tracking-wider text-secondary">Poneglyph</span>
+          <span className="text-sm font-semibold text-primary">Playground</span>
         </div>
       </div>
 
@@ -46,10 +45,6 @@ export default function TopBar({
               <span>Execute</span>
             </>
           )}
-        </button>
-
-        <button className="p-2 text-secondary hover:text-primary transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-          <Settings className="w-5 h-5" />
         </button>
 
         <button
