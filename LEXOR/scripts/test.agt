@@ -1,5 +1,6 @@
 SCRIPT AREA
 START SCRIPT
-DECLARE INT x = 10
-PRINT: "Age: " & x
+DECLARE INT x=29, y=5, result
+result=(x%y)*10+3
+PRINT: "MOD_RESULT=" & result
 END SCRIPT

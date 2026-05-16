@@ -182,21 +182,22 @@ pub fn tokenize(input: &str) -> Result<Vec<(Token, usize)>, String>{
                 }
             }
             
-            // % - modulo, %% - comment
             '%' => {
                 chars.next();
-                if let Some(&'%') = chars.peek(){
-                    while let Some(&ch) = chars.peek(){
-                        if ch == '\n' { // end of comment
-                            break; 
+
+                // %% comment
+                if let Some(&'%') = chars.peek() {
+                    while let Some(&ch) = chars.peek() {
+                        if ch == '\n' {
+                            break;
                         }
-                        chars.next(); 
+                        chars.next();
                     }
-                    continue; 
-                } else{
-                    tokens.push((Token::Modulo, current_line)); 
-                    chars.next();
+                    continue;
                 }
+
+                // modulo operator
+                tokens.push((Token::Modulo, current_line));
             }
 
             // for string literal
