@@ -1,0 +1,21 @@
+SCRIPT AREA
+START SCRIPT
+
+DECLARE INT counter = 1
+DECLARE INT loop = 0
+DECLARE FLOAT amount = 2.5
+
+counter++
+counter++
+counter--
+amount++
+amount--
+
+PRINT: "counter=" & counter & $ & "amount=" & amount & $
+
+FOR (loop = 0, loop < 3, loop++)
+START FOR
+    PRINT: "loop=" & loop & $
+END FOR
+
+END SCRIPT

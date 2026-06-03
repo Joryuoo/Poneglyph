@@ -145,6 +145,20 @@ impl Parser {
         };
         targets.push(first_name);
 
+        if self.match_type(&[Token::Increment]) {
+            return Ok(Statement::Increment {
+                name: targets.remove(0),
+                is_increment: true,
+            });
+        }
+
+        if self.match_type(&[Token::Decrement]) {
+            return Ok(Statement::Increment {
+                name: targets.remove(0),
+                is_increment: false,
+            });
+        }
+
         self.consume(&Token::Assign, "Expected '=' after variable.")?;
 
         while let Some(Token::Identifier(next_name)) = self.peek().cloned() {

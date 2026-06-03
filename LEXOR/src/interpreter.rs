@@ -101,6 +101,32 @@ impl Interpreter {
                 Ok(())
             }
 
+            // 3. Increment/decrement (x++ or x--)
+            Statement::Increment { name, is_increment } => {
+                let variable = self
+                    .memory
+                    .get_mut(&name)
+                    .ok_or_else(|| format!("Unsa man nang '{}'? Wa na gi-declare dong!", name))?;
+
+                match (&variable.declared_type, &variable.value) {
+                    (Token::IntType, Expression::IntType(n)) => {
+                        let delta = if is_increment { 1 } else { -1 };
+                        variable.value = Expression::IntType(n + delta);
+                        Ok(())
+                    }
+                    (Token::FloatType, Expression::FloatType(n)) => {
+                        let delta = if is_increment { 1.0 } else { -1.0 };
+                        variable.value = Expression::FloatType(n + delta);
+                        Ok(())
+                    }
+                    _ => Err(format!(
+                        "Type Error: '{}' must be INT or FLOAT to use {}.",
+                        name,
+                        if is_increment { "++" } else { "--" }
+                    )),
+                }
+            }
+
             // 3. Input (SCAN: x, y)
             Statement::Scan(targets) => {
                 if self.scan_cursor >= self.scan_inputs.len() {

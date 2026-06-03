@@ -266,8 +266,24 @@ pub fn tokenize(input: &str) -> Result<Vec<(Token, usize)>, String>{
 
             // single character operators
             '/' => { tokens.push((Token::Divide, current_line)); chars.next(); }
-            '+' => { tokens.push((Token::Add, current_line)); chars.next(); }
-            '-' => { tokens.push((Token::Subtract, current_line)); chars.next(); }
+            '+' => {
+                chars.next();
+                if let Some(&'+') = chars.peek() {
+                    tokens.push((Token::Increment, current_line));
+                    chars.next();
+                } else {
+                    tokens.push((Token::Add, current_line));
+                }
+            }
+            '-' => {
+                chars.next();
+                if let Some(&'-') = chars.peek() {
+                    tokens.push((Token::Decrement, current_line));
+                    chars.next();
+                } else {
+                    tokens.push((Token::Subtract, current_line));
+                }
+            }
             '*' => { tokens.push((Token::Multiply, current_line)); chars.next(); }
             '^' => { tokens.push((Token::Exponentiate, current_line)); chars.next(); } 
             '$' => { tokens.push((Token::Dollar, current_line)); chars.next(); }

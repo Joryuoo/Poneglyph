@@ -38,6 +38,11 @@ pub enum Statement{
         value: Expression,
     },
 
+    Increment{
+        name: String,
+        is_increment: bool,
+    },
+
     Print(Expression),
     Scan(Vec<String>), // vector of variable names to store input
 
